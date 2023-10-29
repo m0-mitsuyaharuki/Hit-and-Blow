@@ -8,6 +8,11 @@ struct Candidate { //数字の組の中身
 	int n0 = 0, n1 = 0, n2 = 0;
 };
 
+struct Counts { //count:何回あった，nsum:何手かかったかの総和
+	int count = 0;
+	float nsum = 0;
+};
+
 void MakeCan(int i, int j, int k, vector<Candidate>& Cans) {
 	Candidate Can;
 	Can.n0 = i;
@@ -35,34 +40,38 @@ vector<int> Hint(vector<int> comp1, vector<int> comp2, vector<int> hint) { //Com
 	comp1.push_back(avoid);
 
 	return hint;
-	//std::cout << "(" << comp1[0] << ",," << comp1[1] << "," << comp1[2] << "), " << "(" << hint[0] << "," << hint[1] << ")" << endl;
+	//std::cout << "(" << comp1[0] << "," << comp1[1] << "," << comp1[2] << "), " << "(" << hint[0] << "," << hint[1] << ")" << endl;
 }
 
 int main() {
 
-	vector<Candidate> Cans; //候補プール
+	vector<Candidate> Canori, Cans; //候補プール
+	vector<Counts> C1Hint;
+	Counts C00, C01, C02, C03, C10, C11, C12, C20, C30;
 
 	float sum = 0;
-	const int times = 100;
+	const int times = 10000;
 
-	for (int a = 0; a < times; ++a) {
-
-
-		//候補プールを作成
-		for (int i = 0; i < 10; ++i) {
-			for (int j = 0; j < 10; ++j) {
-				if (i == j) {
+	for (int i = 0; i < 10; ++i) {
+		for (int j = 0; j < 10; ++j) {
+			if (i == j) {
+				continue;
+			}
+			for (int k = 0; k < 10; ++k) {
+				if (i == k || j == k) {
 					continue;
 				}
-				for (int k = 0; k < 10; ++k) {
-					if (i == k || j == k) {
-						continue;
-					}
-					MakeCan(i, j, k, Cans);
-					//std::cout << "(" << i << "," << j << "," << k << ")" << endl;
-				}
+				MakeCan(i, j, k, Canori);
+				//std::cout << "(" << i << "," << j << "," << k << ")" << endl;
 			}
 		}
+	}
+
+
+
+	for (int a = 0; a < times; ++a) {
+		int assort = 0;
+		auto Cans(Canori);
 
 		random_device engine;
 		uniform_int_distribution<unsigned> dist1(0, size(Cans) - 1);
@@ -87,7 +96,7 @@ int main() {
 			res.push_back(Cans[rand1].n2);
 
 			hint = Hint(res, answer, hint);
-			std::cout << "(" << res[0] << ",," << res[1] << "," << res[2] << "), " << "(" << hint[0] << "," << hint[1] << ")" << endl;
+			std::cout << "(" << res[0] << "," << res[1] << "," << res[2] << "), " << "(" << hint[0] << "," << hint[1] << ")" << endl;
 
 			vector<int> imps;
 			for (int i = 0; i < size(Cans); ++i) {
@@ -109,15 +118,109 @@ int main() {
 			imps.clear();
 			k++;
 			if (hint[0] == 3) {
-				//std::cout << "(" << Answer[0] << "," << Answer[1] << "," << Answer[2] << ")" << endl;
 				std::cout << k << endl;
+				
+
+				switch (assort) {
+				case 1:
+					C00.nsum += k;
+					//std::cout << C00.nsum << endl;
+					break;
+				case 2:
+					C01.nsum += k;
+					break;
+				case 3:
+					C02.nsum += k;
+					break;
+				case 4:
+					C03.nsum += k;
+					break;
+				case 5:
+					C10.nsum += k;
+					break;
+				case 6:
+					C11.nsum += k;
+					break;
+				case 7:
+					C12.nsum += k;
+					break;
+				case 8:
+					C20.nsum += k;
+					break;
+				case 9:
+					C30.nsum += k;
+					break;
+				}
 				Cans.clear();
 				break;
 			}
+
+			if (k == 1) {
+				switch (hint[0]) {
+				case 0:
+					switch (hint[1]) {
+					case 0:
+						C00.count++;
+						assort = 1;
+						//std::cout << "OK" << C00.count << endl;
+						break;
+					case 1:
+						C01.count++;
+						assort = 2;
+						//std::cout << "OK" << C01.count << endl;
+						break;
+					case 2:
+						C02.count++;
+						assort = 3;
+						break;
+					case 3:
+						C03.count++;
+						assort = 4;
+						break;
+					}
+					break;
+				case 1:
+					switch (hint[1]) {
+					case 0:
+						C10.count++;
+						assort = 5;
+						break;
+					case 1:
+						C11.count++;
+						assort = 6;
+						break;
+					case 2:
+						C12.count++;
+						assort = 7;
+						break;
+					}
+					break;
+				case 2:
+					C20.count++;
+					assort = 8;
+					break;
+				case 3:
+					C30.count++;
+					assort = 9;
+					break;
+				}
+			}
+
 		}
 		sum += k;
 	}
 	std::cout << "Average is " << sum / times << endl;
+
+	std::cout << "H00:" << C00.nsum / C00.count << endl;
+	std::cout << "H01:" << C01.nsum / C01.count << endl;
+	std::cout << "H02:" << C02.nsum / C02.count << endl;
+	std::cout << "H03:" << C03.nsum / C03.count << endl;
+	std::cout << "H10:" << C10.nsum / C10.count << endl;
+	std::cout << "H11:" << C11.nsum / C11.count << endl;
+	std::cout << "H12:" << C12.nsum / C12.count << endl;
+	std::cout << "H20:" << C20.nsum / C20.count << endl;
+	std::cout << "H30:" << C30.nsum / C30.count << endl;
+
 
 	//人間用
 	/*while (1) {
